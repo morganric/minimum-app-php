@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minimal CSDK Video Chat Demo</title>
+</head>
+<body>
+    <!-- a little bit of css to size the video views -->
+    <style>
+            video { border-style: solid; } 
+            video#local { width: 320px; height: 240px; }
+            video#remote { width: 480px; height: 360px; }
+    </style>  
+    <!-- minimal controls -->  
+    <video id="remote" src="" autoplay></video>
+    <video id="local" src="" autoplay></video>
+    <form>
+        <button type='button' id='hangup'>Hangup</button>
+    </form>
+</body>
+
+<!-- required libraries -->
+<script type='text/javascript' src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<!-- NOTE - you will need to change 192.168.50.40:8080 to match your gateway install -->
+<!--      - if you want to use https you will need to import the gateway cert or provision a trusted CA cert -->
+<script type='text/javascript' src='https://192.168.30.249:8443/gateway/adapter.js'></script>
+<script type='text/javascript' src='https://192.168.30.249:8443/gateway/fusion-client-sdk.js'></script>
+
+<script>
+    $(function () {
+        <!-- hook up the hangup button -->
+        $('#hangup').click(function() {
+            // if we're on a call - end it!
+            var call = UC.phone.getCalls()[0];
+            if (call) {
+                call.end();
+            }
+            else { alert('Not on a call');}
+        });
+
+        function makeCall() {
+            
+            UC.phone.onLocalMediaStream = function(mediaStream) {
+                var elem = document.getElementById('local');
+                attachMediaStream(elem, mediaStream);
+            };
+            
+            var number = '1001';
+            var call = UC.phone.createCall(number);
+
+            call.onRemoteMediaStream = function(mediaStream) {
+                var elem = document.getElementById('remote');
+                attachMediaStream(elem, mediaStream);
+            };
+
+            call.dial(true, true);
+        }
+
+        UC.onInitialised = makeCall;
+
+        $.post('/minimal/session.php', function (sessionID) {
+
+            UC.start(sessionID, []);        
+        })
+        .fail(function (response) {
+            alert('Failed to get session :-(');
+        });
+        
+    });
+</script>
+</html>
